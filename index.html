@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probability Distribution Charter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .form-input, .form-select {
+            @apply mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
+        }
+        .icon-button {
+            @apply inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2;
+        }
+        .param-input-group {
+            @apply flex flex-col; 
+        }
+        .param-input-group label {
+            @apply text-xs font-medium text-gray-600 mb-0.5;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 lg:p-6">
+        <header class="mb-6">
+            <h1 class="text-3xl font-bold text-center text-indigo-700">Probability Distribution Visualizer</h1>
+        </header>
+
+        <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xl mb-6 h-[500px] md:h-[600px]">
+            <canvas id="distributionsChart"></canvas>
+        </div>
+
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-xl shadow-lg">
+            <div class="flex items-center">
+                <input type="checkbox" id="logScaleX" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
+                <label for="logScaleX" class="ml-2 text-sm font-medium text-gray-700 cursor-pointer">Logarithmic X-Axis</label>
+            </div>
+            <div class="flex items-center">
+                <label for="plotPoints" class="mr-2 text-sm font-medium text-gray-700">Plot Points:</label>
+                <input type="number" id="plotPoints" value="300" min="50" max="2000" step="50" class="form-input w-24 text-sm">
+            </div>
+        </div>
+
+        <div id="distributionsList" class="mb-6 space-y-3">
+            </div>
+
+        <div id="addEditFormContainer" class="p-4 sm:p-6 bg-white rounded-xl shadow-xl space-y-4">
+            <h2 id="formTitle" class="text-xl font-semibold text-gray-700">Add New Distribution</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                <div>
+                    <label for="distName" class="block text-xs font-medium text-gray-600">Distribution Name (Optional)</label>
+                    <input type="text" id="distName" placeholder="e.g., Baseline Case" class="form-input">
+                </div>
+                <div>
+                    <label for="distType" class="block text-xs font-medium text-gray-600">Distribution Type</label>
+                    <select id="distType" class="form-select">
+                        </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Parameters</label>
+                <div id="paramInputsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3 items-end bg-gray-50 p-3 rounded-md">
+                    </div>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600">Range Clipping (Optional)</label>
+                    <div class="flex items-center mt-1">
+                        <input type="number" id="clipMin" placeholder="Min" class="form-input w-full text-sm rounded-l-md" step="any">
+                        <span class="inline-flex items-center px-2 h-[38px] border-t border-b border-gray-300 bg-gray-100 text-gray-500 text-sm">-</span>
+                        <input type="number" id="clipMax" placeholder="Max" class="form-input w-full text-sm rounded-r-md border-l-0" step="any">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="distColor" class="block text-xs font-medium text-gray-600">Color</label>
+                    <select id="distColor" class="form-select w-full">
+                        </select>
+                </div>
+
+                <div class="flex items-center pt-5 sm:pt-6 justify-start">
+                    <input type="checkbox" id="fillLine" class="form-checkbox h-5 w-5 text-indigo-600 rounded cursor-pointer">
+                    <label for="fillLine" class="ml-2 text-sm font-medium text-gray-700 cursor-pointer">Fill Under Line</label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-3">
+                <button id="saveDistButton" title="Add Distribution" class="icon-button bg-green-600 hover:bg-green-700 focus:ring-green-500 w-full sm:w-auto">
+                    <i class="fas fa-plus mr-1"></i> Add
+                </button>
+                <button id="cancelEditButton" title="Cancel Edit" class="hidden icon-button bg-gray-500 hover:bg-gray-600 focus:ring-gray-400 w-full sm:w-auto">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const COLOR_MAP = {
+            'Crimson': '#FF6384', 'Sky Blue': '#36A2EB', 'Gold': '#FFCE56',
+            'Teal': '#4BC0C0', 'Lavender': '#9966FF', 'Orange': '#FF9F40',
+            'Emerald': '#2ECC71', 'Ruby': '#E74C3C', 'Sunflower': '#F1C40F',
+            'Amethyst': '#8E44AD'
+        };
+        let chartInstance = null;
+        let distributions = []; 
+        let currentEditIndex = -1; 
+        const FLOAT_COMPARISON_TOLERANCE = 1e-9; // For comparing float values
+
+        // --- Distribution Definitions (with default display ranges and updated labels) ---
+        const distributionDefinitions = {
+            uniform: {
+                name: 'Uniform',
+                params: [
+                    { id: 'a', label: 'Min (a):', default: 0, type: 'number', step: 'any' },
+                    { id: 'b', label: 'Max (b):', default: 10, type: 'number', step: 'any' }
+                ],
+                discrete: false,
+                pdf: (x, p) => (p.b <= p.a ? 0 : (x >= p.a && x <= p.b ? 1 / (p.b - p.a) : 0)),
+                range: (p) => ({ min: p.a, max: p.b }),
+                support: (p) => ({min: p.a, max: p.b})
+            },
+            normal: {
+                name: 'Normal',
+                params: [
+                    { id: 'mu', label: 'Mean (μ):', default: 0, type: 'number', step: 'any' },
+                    { id: 'sigma', label: 'Std Dev (σ):', default: 1, type: 'number', step: 'any', minVal: 0.00001 }
+                ],
+                discrete: false,
+                pdf: (x, p) => (p.sigma <= 0 ? 0 : (1 / (p.sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - p.mu) / p.sigma, 2))),
+                range: (p) => (p.sigma > 0 ? { min: p.mu - 4 * p.sigma, max: p.mu + 4 * p.sigma } : {min: p.mu -1, max: p.mu+1}),
+                support: () => ({min: -Infinity, max: Infinity})
+            },
+            lognormal: {
+                name: 'Lognormal',
+                params: [
+                    { id: 'muLog', label: 'Log Mean (μ of log):', default: 0, type: 'number', step: 'any' },
+                    { id: 'sigmaLog', label: 'Log Std Dev (σ of log):', default: 0.5, type: 'number', step: 'any', minVal: 0.00001 }
+                ],
+                discrete: false,
+                pdf: (x, p) => (x <= 0 || p.sigmaLog <= 0 ? 0 : (1 / (x * p.sigmaLog * Math.sqrt(2 * Math.PI))) * Math.exp(-Math.pow(Math.log(x) - p.muLog, 2) / (2 * p.sigmaLog * p.sigmaLog))),
+                range: (p) => (p.sigmaLog > 0 ? { min: 0.001, max: Math.exp(p.muLog + 4 * p.sigmaLog) } : {min: 0.001, max:1}),
+                support: () => ({min: 0, max: Infinity}) // x > 0 for PDF
+            },
+            exponential: {
+                name: 'Exponential',
+                params: [ { id: 'lambda', label: 'Rate (λ):', default: 1, type: 'number', step: 'any', minVal: 0.00001 } ],
+                discrete: false,
+                pdf: (x, p) => (x < 0 || p.lambda <= 0 ? 0 : p.lambda * Math.exp(-p.lambda * x)),
+                range: (p) => (p.lambda > 0 ? { min: 0, max: 5 / p.lambda } : {min:0, max:5}),
+                support: () => ({min: 0, max: Infinity})
+            },
+            poisson: {
+                name: 'Poisson',
+                params: [ { id: 'lambda', label: 'Avg Events (λ):', default: 3, type: 'number', step: '1', minVal: 0 } ],
+                discrete: true,
+                pdf: (k, p) => (k < 0 || p.lambda < 0 || !Number.isInteger(k) ? 0 : (Math.pow(p.lambda, k) * Math.exp(-p.lambda)) / math.factorial(k)),
+                range: (p) => ({ min: Math.max(0, Math.floor(p.lambda - 4 * Math.sqrt(p.lambda))), max: Math.ceil(p.lambda + 4 * Math.sqrt(p.lambda)) +1 }),
+                support: () => ({min: 0, max: Infinity}) // k >= 0 integers
+            },
+            triangular: {
+                name: 'Triangular',
+                params: [
+                    { id: 'a', label: 'Min (a):', default: 0, type: 'number', step: 'any' },
+                    { id: 'b', label: 'Max (b):', default: 10, type: 'number', step: 'any' },
+                    { id: 'c', label: 'Mode (c):', default: 5, type: 'number', step: 'any' }
+                ],
+                discrete: false,
+                pdf: (x, p) => {
+                    const { a, b, c } = p;
+                    if (b <= a || c < a || c > b) return 0;
+                    if (x < a || x > b) return 0;
+                    if (a === c && c === b) return (x === c ? Infinity : 0); 
+                    if (c === a) return (x === a ? (b-a === 0 ? Infinity : 2 / (b - a)) : (x > a && x <=b ? 2 * (b - x) / ((b - a) * (b - a)) : 0) );
+                    if (c === b) return (x === b ? (b-a === 0 ? Infinity : 2 / (b - a)) : (x >= a && x < b ? 2 * (x - a) / ((b - a) * (b - a)) : 0) );
+                    if (x <= c) return (c-a === 0 ? (x === c ? Infinity : 0) : (2 * (x - a)) / ((b - a) * (c - a)));
+                    if (x > c) return (b-c === 0 ? (x === c ? Infinity : 0) : (2 * (b - x)) / ((b - a) * (b - c)));
+                    return 0;
+                },
+                range: (p) => ({ min: p.a, max: p.b }),
+                support: (p) => ({min: p.a, max: p.b})
+            },
+            beta: {
+                name: 'Beta',
+                params: [
+                    { id: 'alpha', label: 'Alpha (α):', default: 2, type: 'number', step: 'any', minVal: 0.00001 },
+                    { id: 'beta', label: 'Beta (β):', default: 5, type: 'number', step: 'any', minVal: 0.00001 }
+                ],
+                discrete: false,
+                pdf: (x, p) => {
+                    const { alpha, beta } = p;
+                    if (alpha <= 0 || beta <= 0) return 0;
+                    if (x < 0 || x > 1) return 0;
+                    if ((x === 0 && alpha < 1) || (x === 1 && beta < 1)) return Infinity;
+                    if (x === 0 && alpha === 1) return beta; 
+                    if (x === 1 && beta === 1) return alpha; 
+                    if ((x === 0 && alpha > 1) || (x === 1 && beta > 1)) return 0;
+                    
+                    // Corrected: Use Math.log(math.gamma()) instead of math.logGamma()
+                    const logGammaAlpha = Math.log(math.gamma(alpha));
+                    const logGammaBeta = Math.log(math.gamma(beta));
+                    const logGammaAlphaPlusBeta = Math.log(math.gamma(alpha + beta));
+                    const logBetaFunc = logGammaAlpha + logGammaBeta - logGammaAlphaPlusBeta;
+
+                    return Math.exp((alpha - 1) * Math.log(x) + (beta - 1) * Math.log(1 - x) - logBetaFunc);
+                },
+                range: (p) => ({ min: 0, max: 1 }),
+                support: () => ({min: 0, max: 1})
+            },
+            gamma: {
+                name: 'Gamma',
+                params: [
+                    { id: 'alpha', label: 'Shape (α):', default: 2, type: 'number', step: 'any', minVal: 0.00001 },
+                    { id: 'betaRate', label: 'Rate (β):', default: 1, type: 'number', step: 'any', minVal: 0.00001 }
+                ],
+                discrete: false,
+                pdf: (x, p) => {
+                    const { alpha, betaRate } = p;
+                    if (alpha <= 0 || betaRate <= 0) return 0;
+                    if (x < 0) return 0;
+                    if (x === 0) {
+                        if (alpha === 1) return betaRate;
+                        if (alpha < 1) return Infinity;
+                        return 0;
+                    }
+                    return (Math.pow(betaRate, alpha) / math.gamma(alpha)) * Math.pow(x, alpha - 1) * Math.exp(-betaRate * x);
+                },
+                range: (p) => (p.betaRate > 0 ? { min: 0, max: p.alpha / p.betaRate + 5 * Math.sqrt(p.alpha) / p.betaRate } : {min:0, max:5}),
+                support: () => ({min: 0, max: Infinity})
+            },
+            bernoulli: {
+                name: 'Bernoulli',
+                params: [ { id: 'prob', label: 'Prob of Success (p):', default: 0.5, type: 'number', step: 'any', minVal: 0, maxVal: 1 } ],
+                discrete: true,
+                pdf: (k, p) => {
+                    if (p.prob < 0 || p.prob > 1) return 0;
+                    if (k === 0) return 1 - p.prob;
+                    if (k === 1) return p.prob;
+                    return 0;
+                },
+                range: (p) => ({ min: -0.5, max: 1.5 }),
+                support: () => ({min:0, max:1}) // k can only be 0 or 1
+            },
+            binomial: {
+                name: 'Binomial',
+                params: [
+                    { id: 'n', label: 'Number of Trials (n):', default: 10, type: 'number', step: '1', minVal: 0 },
+                    { id: 'prob', label: 'Prob of Success (p):', default: 0.5, type: 'number', step: 'any', minVal: 0, maxVal: 1 }
+                ],
+                discrete: true,
+                pdf: (k, p) => {
+                    const { n, prob } = p;
+                    if (prob < 0 || prob > 1 || n < 0 || !Number.isInteger(n) || k < 0 || k > n || !Number.isInteger(k)) return 0;
+                    if (n === 0 && k === 0) return 1;
+                    return math.combinations(n, k) * Math.pow(prob, k) * Math.pow(1 - prob, n - k);
+                },
+                range: (p) => ({ min: -0.5, max: p.n + 0.5 }),
+                support: (p) => ({min:0, max:p.n}) // k from 0 to n
+            }
+        };
+
+        // --- DOM Elements ---
+        const distNameInput = document.getElementById('distName');
+        const distTypeSelect = document.getElementById('distType');
+        const paramInputsContainer = document.getElementById('paramInputsContainer');
+        const clipMinInput = document.getElementById('clipMin');
+        const clipMaxInput = document.getElementById('clipMax');
+        const distColorSelect = document.getElementById('distColor');
+        const fillLineCheckbox = document.getElementById('fillLine');
+        const saveDistButton = document.getElementById('saveDistButton');
+        const cancelEditButton = document.getElementById('cancelEditButton');
+        const distributionsListDiv = document.getElementById('distributionsList');
+        const logScaleXCheckbox = document.getElementById('logScaleX');
+        const formTitle = document.getElementById('formTitle');
+        const plotPointsInput = document.getElementById('plotPoints');
+
+        // --- UI Initialization ---
+        function populateDistributionTypes() {
+            distTypeSelect.innerHTML = '';
+            Object.keys(distributionDefinitions).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = distributionDefinitions[key].name;
+                distTypeSelect.appendChild(option);
+            });
+        }
+
+        function populateColorOptions() {
+            distColorSelect.innerHTML = '';
+            Object.entries(COLOR_MAP).forEach(([name, hex]) => {
+                const option = document.createElement('option');
+                option.value = hex;
+                option.textContent = name;
+                distColorSelect.appendChild(option);
+            });
+        }
+
+        function updateParameterInputs(selectedDistKey) {
+            paramInputsContainer.innerHTML = ''; 
+            const distDef = distributionDefinitions[selectedDistKey];
+            if (!distDef) return;
+
+            distDef.params.forEach(param => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'param-input-group';
+
+                const label = document.createElement('label');
+                label.htmlFor = `param_${param.id}`;
+                label.textContent = param.label;
+                groupDiv.appendChild(label);
+
+                const input = document.createElement('input');
+                input.type = param.type || 'number';
+                input.id = `param_${param.id}`;
+                input.name = param.id;
+                input.className = 'form-input text-sm'; 
+                input.value = param.default;
+                if (param.step) input.step = param.step;
+                if (param.minVal !== undefined) input.min = param.minVal;
+                if (param.maxVal !== undefined) input.max = param.maxVal;
+                groupDiv.appendChild(input);
+                paramInputsContainer.appendChild(groupDiv);
+            });
+        }
+
+        // --- Chart Logic ---
+        function initializeChart() {
+            const ctx = document.getElementById('distributionsChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { type: 'linear', title: { display: true, text: 'X Value' } },
+                        y: { title: { display: true, text: 'Density / Probability' }, beginAtZero: true, grace: '5%' }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top', // Position legend at the top
+                            align: 'end',    // Align to the right (end)
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 10 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) label += context.parsed.y.toFixed(5);
+                                    return label;
+                                }
+                            }
+                        },
+                        afterDraw: (chart) => { // For drawing clipping icons
+                            const ctx = chart.ctx;
+                            const xAxis = chart.scales.x;
+                            const yAxis = chart.scales.y;
+                            const chartArea = chart.chartArea;
+
+                            if (!chartArea) return;
+
+                            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                if (!meta.hidden && dataset.data.length > 0) {
+                                    const dist = distributions[datasetIndex];
+                                    if (!dist) return;
+                                    const distDef = distributionDefinitions[dist.type];
+
+                                    const drawClipIconAtPoint = (xVal, yVal, color) => {
+                                        const xPixel = xAxis.getPixelForValue(xVal);
+                                        const yPixel = yAxis.getPixelForValue(yVal);
+
+                                        if (xPixel >= chartArea.left - FLOAT_COMPARISON_TOLERANCE && xPixel <= chartArea.right + FLOAT_COMPARISON_TOLERANCE &&
+                                            yPixel >= chartArea.top - FLOAT_COMPARISON_TOLERANCE && yPixel <= chartArea.bottom + FLOAT_COMPARISON_TOLERANCE) {
+                                            ctx.save();
+                                            ctx.fillStyle = color;
+                                            ctx.beginPath();
+                                            ctx.arc(xPixel, yPixel, 3.5, 0, 2 * Math.PI); // Small circle
+                                            ctx.fill();
+                                            ctx.restore();
+                                        }
+                                    };
+                                    
+                                    // Check for clipping at the start
+                                    if (dist.clipMin !== null) {
+                                        // Find the first plotted point of this dataset
+                                        const firstPoint = dataset.data.find(p => p !== null && p.y !== null); // Assumes {x,y} objects or array of y
+                                        let firstPlottedXVal;
+                                        let firstPlottedYVal;
+
+                                        if (typeof dataset.data[0] === 'object' && dataset.data[0] !== null) { // {x,y} format
+                                            const firstValidIndex = dataset.data.findIndex(p => p !== null && p.y !== null);
+                                            if (firstValidIndex !== -1) {
+                                                firstPlottedXVal = dataset.data[firstValidIndex].x;
+                                                firstPlottedYVal = dataset.data[firstValidIndex].y;
+                                            }
+                                        } else { // Array of y, x from labels
+                                            const firstValidIndex = dataset.data.findIndex(y => y !== null);
+                                            if (firstValidIndex !== -1) {
+                                                firstPlottedXVal = chart.data.labels[firstValidIndex];
+                                                firstPlottedYVal = dataset.data[firstValidIndex];
+                                            }
+                                        }
+                                        
+                                        if (firstPlottedXVal !== undefined && Math.abs(firstPlottedXVal - dist.clipMin) < FLOAT_COMPARISON_TOLERANCE) {
+                                            // Check if this clipping is "sharper" than natural support
+                                            const naturalSupport = distDef.support(dist.params);
+                                            if (dist.clipMin > naturalSupport.min + FLOAT_COMPARISON_TOLERANCE) {
+                                                 drawClipIconAtPoint(firstPlottedXVal, firstPlottedYVal, dataset.borderColor);
+                                            }
+                                        }
+                                    }
+
+                                    // Check for clipping at the end
+                                    if (dist.clipMax !== null) {
+                                        let lastPlottedXVal;
+                                        let lastPlottedYVal;
+
+                                        if (typeof dataset.data[0] === 'object' && dataset.data[0] !== null) { // {x,y} format
+                                            for (let i = dataset.data.length - 1; i >= 0; i--) {
+                                                if (dataset.data[i] !== null && dataset.data[i].y !== null) {
+                                                    lastPlottedXVal = dataset.data[i].x;
+                                                    lastPlottedYVal = dataset.data[i].y;
+                                                    break;
+                                                }
+                                            }
+                                        } else { // Array of y, x from labels
+                                             for (let i = dataset.data.length - 1; i >= 0; i--) {
+                                                if (dataset.data[i] !== null) {
+                                                    lastPlottedXVal = chart.data.labels[i];
+                                                    lastPlottedYVal = dataset.data[i];
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        if (lastPlottedXVal !== undefined && Math.abs(lastPlottedXVal - dist.clipMax) < FLOAT_COMPARISON_TOLERANCE) {
+                                            const naturalSupport = distDef.support(dist.params);
+                                            if (dist.clipMax < naturalSupport.max - FLOAT_COMPARISON_TOLERANCE) {
+                                                 drawClipIconAtPoint(lastPlottedXVal, lastPlottedYVal, dataset.borderColor);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        
+        function calculateChartXRange() {
+            let xMin = Infinity, xMax = -Infinity;
+            let rangeDefined = false;
+
+            if (distributions.length === 0) return { min: -10, max: 20 };
+
+            distributions.forEach(dist => {
+                const distDef = distributionDefinitions[dist.type];
+                let dRange = distDef.range(dist.params); // Get default range from definition
+
+                // Override with clipping if defined and tighter
+                if (dist.clipMin !== null && isFinite(dist.clipMin)) {
+                    dRange.min = Math.max(dRange.min ?? -Infinity, dist.clipMin);
+                     xMin = Math.min(xMin, dist.clipMin); // Ensure clip points are considered for overall range
+                     rangeDefined = true;
+                }
+                if (dist.clipMax !== null && isFinite(dist.clipMax)) {
+                    dRange.max = Math.min(dRange.max ?? Infinity, dist.clipMax);
+                    xMax = Math.max(xMax, dist.clipMax); // Ensure clip points are considered
+                    rangeDefined = true;
+                }
+                
+                if (dRange.min !== undefined && isFinite(dRange.min)) {
+                    xMin = Math.min(xMin, dRange.min);
+                    rangeDefined = true;
+                }
+                if (dRange.max !== undefined && isFinite(dRange.max)) {
+                    xMax = Math.max(xMax, dRange.max);
+                    rangeDefined = true;
+                }
+            });
+
+            if (!rangeDefined) return { min: -10, max: 20 };
+            if (xMin === xMax) { xMin -= 1; xMax += 1; }
+
+            const padding = (xMax - xMin) * 0.05 || 1; // Ensure padding is non-zero
+            return { min: xMin - padding, max: xMax + padding };
+        }
+
+        function updateChart() {
+            if (!chartInstance) return;
+
+            const numPoints = parseInt(plotPointsInput.value) || 300;
+            const isLog = logScaleXCheckbox.checked;
+            
+            const { min: chartRangeMinOriginal, max: chartRangeMaxOriginal } = calculateChartXRange();
+            let chartRangeMin = chartRangeMinOriginal;
+            let chartRangeMax = chartRangeMaxOriginal;
+
+            if (isLog && chartRangeMin <= 0) chartRangeMin = 0.01; 
+            if (isLog && chartRangeMax <= chartRangeMin) chartRangeMax = chartRangeMin * 100;
+
+
+            chartInstance.options.scales.x.type = isLog ? 'logarithmic' : 'linear';
+            chartInstance.options.scales.x.min = chartRangeMin;
+            chartInstance.options.scales.x.max = chartRangeMax;
+
+            // Generate X values for plotting, ensuring clip points are included
+            let allPlotXValues = new Set();
+            if (numPoints > 1) {
+                if (isLog) {
+                    if (chartRangeMin > 0 && chartRangeMax > chartRangeMin) {
+                         for (let i = 0; i < numPoints; i++) {
+                            allPlotXValues.add(Math.exp(Math.log(chartRangeMin) + (Math.log(chartRangeMax) - Math.log(chartRangeMin)) * i / (numPoints - 1)));
+                        }
+                    } else { 
+                        for (let i = 0; i < numPoints; i++) allPlotXValues.add(chartRangeMin + (chartRangeMax - chartRangeMin) * i / (numPoints - 1));
+                    }
+                } else {
+                    const step = (chartRangeMax - chartRangeMin) / (numPoints - 1);
+                    for (let i = 0; i < numPoints; i++) {
+                        allPlotXValues.add(chartRangeMin + i * step);
+                    }
+                }
+            } else if (numPoints === 1) {
+                 allPlotXValues.add(chartRangeMin + (chartRangeMax-chartRangeMin)/2);
+            }
+
+            distributions.forEach(d => { // Add specific clip points of active distributions
+                if (d.clipMin !== null && d.clipMin >= chartRangeMin && d.clipMin <= chartRangeMax) allPlotXValues.add(d.clipMin);
+                if (d.clipMax !== null && d.clipMax >= chartRangeMin && d.clipMax <= chartRangeMax) allPlotXValues.add(d.clipMax);
+            });
+            
+            const sortedUniqueX = Array.from(allPlotXValues).sort((a,b) => a-b);
+            chartInstance.data.labels = sortedUniqueX.map(x => parseFloat(x.toPrecision(4)));
+
+
+            chartInstance.data.datasets = distributions.map(dist => {
+                const distDef = distributionDefinitions[dist.type];
+                
+                // Use the chart's common X labels for evaluating Y values
+                const yValues = chartInstance.data.labels.map(x => {
+                    let val;
+                    // Apply clipping: if x is outside this distribution's specific clip range, value is null.
+                    // Use tolerance for floating point comparisons.
+                    if ((dist.clipMin !== null && x < dist.clipMin - FLOAT_COMPARISON_TOLERANCE) || 
+                        (dist.clipMax !== null && x > dist.clipMax + FLOAT_COMPARISON_TOLERANCE)) {
+                        val = null;
+                    } else {
+                        val = distDef.pdf(x, dist.params);
+                    }
+                    return isFinite(val) ? val : null; 
+                });
+
+                let datasetLabelText = dist.customName || distDef.name;
+                const paramSummary = Object.entries(dist.params).map(([paramId, paramValue]) => {
+                    const paramDef = distDef.params.find(p => p.id === paramId);
+                    const labelPrefix = paramDef ? paramDef.label.split(':')[0] : paramId; // Get text before colon
+                    return `${labelPrefix}=${parseFloat(paramValue).toPrecision(2)}`;
+                }).join(', ');
+                if (paramSummary) datasetLabelText += ` (${paramSummary})`;
+
+
+                if (distDef.discrete) {
+                    // For discrete, we still map over all chart X labels, but only return Y for integer-like X.
+                    // The `stepped` property will make it look more like a PMF.
+                    const discreteYValues = chartInstance.data.labels.map(x_val => {
+                        let k = Math.round(x_val);
+                        let val = null;
+                        if (Math.abs(x_val - k) < FLOAT_COMPARISON_TOLERANCE) { // If x_val is effectively an integer
+                             if (!((dist.clipMin !== null && k < dist.clipMin - FLOAT_COMPARISON_TOLERANCE) ||
+                                  (dist.clipMax !== null && k > dist.clipMax + FLOAT_COMPARISON_TOLERANCE))) {
+                                val = distDef.pdf(k, dist.params);
+                             }
+                        }
+                        return isFinite(val) ? val : null;
+                    });
+                     return {
+                        label: datasetLabelText,
+                        data: discreteYValues, // Use yValues which are already clipped
+                        borderColor: dist.color,
+                        backgroundColor: dist.fill ? `${dist.color}4D` : 'transparent',
+                        fill: dist.fill ? 'origin' : false,
+                        tension: 0, 
+                        pointRadius: distDef.discrete ? 3.5 : 1.5, 
+                        pointHitRadius: 10,
+                        showLine: !distDef.discrete, 
+                        stepped: distDef.discrete ? 'before' : false,
+                    };
+                }
+                return {
+                    label: datasetLabelText,
+                    data: yValues, // yValues are now correctly nulled outside clip range
+                    borderColor: dist.color,
+                    backgroundColor: dist.fill ? `${dist.color}4D` : 'transparent',
+                    fill: dist.fill ? 'origin' : false,
+                    tension: 0.1,
+                    pointRadius: 1.5,
+                    pointHitRadius: 10,
+                };
+            });
+            chartInstance.update();
+        }
+
+        // --- Distribution Management ---
+        function renderDistributionsList() {
+            distributionsListDiv.innerHTML = '';
+            distributions.forEach((dist, index) => {
+                const distDef = distributionDefinitions[dist.type];
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg shadow hover:shadow-md transition-shadow duration-150';
+
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'flex-grow mr-2 overflow-hidden'; 
+                const nameToShow = dist.customName || distDef.name;
+                const paramString = Object.entries(dist.params).map(([paramId,v]) => {
+                    const paramDef = distDef.params.find(p => p.id === paramId);
+                    const labelPrefix = paramDef ? paramDef.label.split(':')[0] : paramId;
+                    return `${labelPrefix}=${parseFloat(v).toPrecision(3)}`;
+                }).join(', ');
+
+                infoDiv.innerHTML = `
+                    <span class="font-semibold text-indigo-600 truncate" title="${nameToShow}">${nameToShow}</span>
+                    <span class="text-xs text-gray-600 block sm:inline sm:ml-1">(${distDef.name}: ${paramString})</span>
+                    <div class="text-xs mt-1 sm:mt-0">
+                        <span class="mr-2">Color: <span class="inline-block w-3 h-3 rounded-sm align-middle" style="background-color: ${dist.color};"></span></span>
+                        <span class="mr-2">Fill: ${dist.fill ? 'Yes' : 'No'}</span>
+                        ${dist.clipMin !== null || dist.clipMax !== null ? `<span>Clip: [${dist.clipMin ?? 'N/A'}-${dist.clipMax ?? 'N/A'}]</span>` : ''}
+                    </div>
+                `;
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'flex-shrink-0 flex items-center';
+                const editButton = document.createElement('button');
+                editButton.title = 'Edit Distribution';
+                editButton.className = 'text-blue-500 hover:text-blue-700 mr-2 px-2 py-1 rounded hover:bg-blue-100 transition-colors';
+                editButton.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+                editButton.onclick = () => loadDistributionForEdit(index);
+                actionsDiv.appendChild(editButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.title = 'Delete Distribution';
+                deleteButton.className = 'text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-100 transition-colors';
+                deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                deleteButton.onclick = () => deleteDistribution(index);
+                actionsDiv.appendChild(deleteButton);
+
+                itemDiv.appendChild(infoDiv);
+                itemDiv.appendChild(actionsDiv);
+                distributionsListDiv.appendChild(itemDiv);
+            });
+            if (distributions.length === 0) {
+                distributionsListDiv.innerHTML = `<p class="text-center text-gray-500 italic py-4">No distributions added yet. Add one below to get started!</p>`;
+            }
+        }
+
+        function resetForm() {
+            distNameInput.value = '';
+            distTypeSelect.value = Object.keys(distributionDefinitions)[0];
+            updateParameterInputs(distTypeSelect.value); 
+            clipMinInput.value = '';
+            clipMaxInput.value = '';
+            distColorSelect.value = Object.values(COLOR_MAP)[0];
+            fillLineCheckbox.checked = false;
+            currentEditIndex = -1;
+            saveDistButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Add';
+            saveDistButton.title = 'Add Distribution';
+            saveDistButton.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
+            saveDistButton.classList.add('bg-green-600', 'hover:bg-green-700', 'focus:ring-green-500');
+            cancelEditButton.classList.add('hidden');
+            formTitle.textContent = 'Add New Distribution';
+        }
+
+        function loadDistributionForEdit(index) {
+            const dist = distributions[index];
+            currentEditIndex = index;
+
+            distNameInput.value = dist.customName || '';
+            distTypeSelect.value = dist.type;
+            updateParameterInputs(dist.type); 
+
+            const distDef = distributionDefinitions[dist.type];
+            distDef.params.forEach(param => {
+                document.getElementById(`param_${param.id}`).value = dist.params[param.id];
+            });
+
+            clipMinInput.value = dist.clipMin !== null ? dist.clipMin : '';
+            clipMaxInput.value = dist.clipMax !== null ? dist.clipMax : '';
+            distColorSelect.value = dist.color;
+            fillLineCheckbox.checked = dist.fill;
+
+            saveDistButton.innerHTML = '<i class="fas fa-save mr-1"></i> Save';
+            saveDistButton.title = 'Save Changes';
+            saveDistButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'focus:ring-green-500');
+            saveDistButton.classList.add('bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
+            cancelEditButton.classList.remove('hidden');
+            formTitle.textContent = `Edit: ${dist.customName || distDef.name}`;
+            addEditFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function saveDistribution() {
+            const type = distTypeSelect.value;
+            const distDef = distributionDefinitions[type];
+            const params = {};
+            let valid = true;
+
+            distDef.params.forEach(param => {
+                const inputElement = document.getElementById(`param_${param.id}`);
+                let valueStr = inputElement.value.trim();
+                let value;
+
+                if (valueStr === '') { // Handle empty inputs
+                    // If a default exists, or if it's allowed to be empty (e.g. not having minVal constraint)
+                    // For now, let's treat empty as potentially invalid if a number is expected by minVal/maxVal
+                    // or if it's a core parameter. This might need refinement based on which params are truly optional.
+                    // For simplicity, if empty, and default exists, consider default? Or require input.
+                    // Let's assume for now that parameters are generally required.
+                     alert(`Parameter ${param.label} cannot be empty.`);
+                     inputElement.focus(); valid = false; return;
+                }
+
+
+                if (param.type === 'number' || !param.type) {
+                    value = parseFloat(valueStr);
+                    if (inputElement.step === '1') value = parseInt(valueStr); // For integer steps
+                } else {
+                    value = valueStr;
+                }
+                
+
+                if ((param.type === 'number' || !param.type) && isNaN(value)) {
+                    alert(`Invalid number for ${param.label}.`);
+                    inputElement.focus(); valid = false; return;
+                }
+
+                if (param.minVal !== undefined && value < param.minVal) {
+                     alert(`${param.label} must be at least ${param.minVal}.`);
+                     inputElement.focus(); valid = false; return;
+                }
+                if (param.maxVal !== undefined && value > param.maxVal) {
+                     alert(`${param.label} must be at most ${param.maxVal}.`);
+                     inputElement.focus(); valid = false; return;
+                }
+                params[param.id] = value;
+            });
+
+            if (!valid) return;
+            
+            if (type === 'uniform' && params.b <= params.a) {
+                alert('For Uniform distribution, Max (b) must be greater than Min (a).'); valid = false;
+            }
+            if (type === 'triangular') {
+                if (params.b <= params.a) { alert('Triangular: Max (b) must be > Min (a).'); valid = false; }
+                else if (params.c < params.a || params.c > params.b) { alert('Triangular: Mode (c) must be between Min (a) and Max (b).'); valid = false; }
+            }
+            if (!valid) return;
+
+            const newDistribution = {
+                customName: distNameInput.value.trim() || '',
+                type: type,
+                params: params,
+                color: distColorSelect.value,
+                fill: fillLineCheckbox.checked,
+                clipMin: clipMinInput.value !== '' ? parseFloat(clipMinInput.value) : null,
+                clipMax: clipMaxInput.value !== '' ? parseFloat(clipMaxInput.value) : null,
+            };
+             // Validate clipMin < clipMax if both are provided
+            if (newDistribution.clipMin !== null && newDistribution.clipMax !== null && newDistribution.clipMin >= newDistribution.clipMax) {
+                alert('Clip Min must be less than Clip Max.');
+                clipMinInput.focus();
+                return;
+            }
+
+
+            if (currentEditIndex === -1) { 
+                distributions.push(newDistribution);
+            } else { 
+                distributions[currentEditIndex] = newDistribution;
+            }
+
+            renderDistributionsList();
+            updateChart();
+            resetForm();
+        }
+
+        function deleteDistribution(index) {
+            if (confirm('Are you sure you want to delete this distribution?')) {
+                distributions.splice(index, 1);
+                if (currentEditIndex === index) resetForm();
+                else if (currentEditIndex > index) currentEditIndex--;
+                renderDistributionsList();
+                updateChart();
+            }
+        }
+
+        // --- Event Listeners ---
+        distTypeSelect.addEventListener('change', (e) => updateParameterInputs(e.target.value));
+        saveDistButton.addEventListener('click', saveDistribution);
+        cancelEditButton.addEventListener('click', resetForm);
+        logScaleXCheckbox.addEventListener('change', updateChart);
+        plotPointsInput.addEventListener('change', updateChart);
+        
+        // --- Initial Setup ---
+        window.onload = () => {
+            populateDistributionTypes();
+            populateColorOptions();
+            updateParameterInputs(distTypeSelect.value); 
+            initializeChart();
+            renderDistributionsList(); 
+            updateChart(); 
+        };
+    </script>
+</body>
+</html>
