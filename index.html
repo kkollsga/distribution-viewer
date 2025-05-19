@@ -14,19 +14,6 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #555; }
-
-        .form-input, .form-select {
-            @apply mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
-        }
-        .icon-button {
-            @apply inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2;
-        }
-        .param-input-group {
-            @apply flex flex-col; 
-        }
-        .param-input-group label {
-            @apply text-xs font-medium text-gray-600 mb-0.5;
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -36,7 +23,7 @@
             <h1 class="text-3xl font-bold text-center text-indigo-700">Probability Distribution Visualizer</h1>
         </header>
 
-        <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xl mb-6 h-[500px] md:h-[600px]">
+        <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xl mb-6 h-[500px] md:h-[600px] relative">
             <canvas id="distributionsChart"></canvas>
         </div>
 
@@ -47,66 +34,90 @@
             </div>
             <div class="flex items-center">
                 <label for="plotPoints" class="mr-2 text-sm font-medium text-gray-700">Plot Points:</label>
-                <input type="number" id="plotPoints" value="300" min="50" max="2000" step="50" class="form-input w-24 text-sm">
+                <input type="number" id="plotPoints" value="300" min="50" max="2000" step="50" class="mt-1 block w-24 py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
             </div>
         </div>
 
         <div id="distributionsList" class="mb-6 space-y-3">
-            </div>
-
-        <div id="addEditFormContainer" class="p-4 sm:p-6 bg-white rounded-xl shadow-xl space-y-4">
-            <h2 id="formTitle" class="text-xl font-semibold text-gray-700">Add New Distribution</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                <div>
-                    <label for="distName" class="block text-xs font-medium text-gray-600">Distribution Name (Optional)</label>
-                    <input type="text" id="distName" placeholder="e.g., Baseline Case" class="form-input">
-                </div>
-                <div>
-                    <label for="distType" class="block text-xs font-medium text-gray-600">Distribution Type</label>
-                    <select id="distType" class="form-select">
-                        </select>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Parameters</label>
-                <div id="paramInputsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3 items-end bg-gray-50 p-3 rounded-md">
+            <!-- Distribution items will be added here dynamically -->
+        </div>
+        
+        <!-- Collapsible form -->
+        <div id="addEditFormContainer" class="mb-6 overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+            <div class="p-6 bg-white rounded-xl shadow-xl space-y-5 border-2 border-indigo-100">
+                <h2 id="formTitle" class="text-xl font-semibold text-indigo-700 flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    <span>Add New Distribution</span>
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <div>
+                        <label for="distName" class="block text-xs font-medium text-gray-600">Distribution Name (Optional)</label>
+                        <input type="text" id="distName" placeholder="e.g., Baseline Case" 
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200 ease-in-out hover:border-indigo-400">
                     </div>
-            </div>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
-                <div>
-                    <label class="block text-xs font-medium text-gray-600">Range Clipping (Optional)</label>
-                    <div class="flex items-center mt-1">
-                        <input type="number" id="clipMin" placeholder="Min" class="form-input w-full text-sm rounded-l-md" step="any">
-                        <span class="inline-flex items-center px-2 h-[38px] border-t border-b border-gray-300 bg-gray-100 text-gray-500 text-sm">-</span>
-                        <input type="number" id="clipMax" placeholder="Max" class="form-input w-full text-sm rounded-r-md border-l-0" step="any">
+                    <div>
+                        <label for="distType" class="block text-xs font-medium text-gray-600">Distribution Type</label>
+                        <select id="distType" 
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200 ease-in-out hover:border-indigo-400">
+                            <!-- Options added dynamically -->
+                        </select>
                     </div>
                 </div>
 
                 <div>
-                    <label for="distColor" class="block text-xs font-medium text-gray-600">Color</label>
-                    <select id="distColor" class="form-select w-full">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Parameters</label>
+                    <div id="paramInputsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3 items-end bg-gray-50 p-4 rounded-md border border-gray-200">
+                        <!-- Parameter inputs added dynamically -->
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600">Range Clipping (Optional)</label>
+                        <div class="flex items-center mt-1">
+                            <input type="number" id="clipMin" placeholder="Min" 
+                                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-l-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200 ease-in-out hover:border-indigo-400" step="any">
+                            <span class="inline-flex items-center px-2 h-[38px] border-t border-b border-gray-300 bg-gray-100 text-gray-500 text-sm">-</span>
+                            <input type="number" id="clipMax" placeholder="Max" 
+                                class="block w-full py-2 px-3 border border-l-0 border-gray-300 bg-white rounded-r-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200 ease-in-out hover:border-indigo-400" step="any">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="distColor" class="block text-xs font-medium text-gray-600">Color</label>
+                        <select id="distColor" 
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200 ease-in-out hover:border-indigo-400">
+                            <!-- Color options added dynamically -->
                         </select>
+                    </div>
+
+                    <div class="flex items-center pt-5 sm:pt-6 justify-start">
+                        <input type="checkbox" id="fillLine" class="h-5 w-5 text-indigo-600 rounded cursor-pointer">
+                        <label for="fillLine" class="ml-2 text-sm font-medium text-gray-700 cursor-pointer">Fill Under Line</label>
+                    </div>
                 </div>
 
-                <div class="flex items-center pt-5 sm:pt-6 justify-start">
-                    <input type="checkbox" id="fillLine" class="form-checkbox h-5 w-5 text-indigo-600 rounded cursor-pointer">
-                    <label for="fillLine" class="ml-2 text-sm font-medium text-gray-700 cursor-pointer">Fill Under Line</label>
+                <div class="flex items-center justify-end space-x-3 pt-3">
+                    <button id="cancelEditButton" title="Cancel Edit" 
+                        class="hidden inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        <i class="fas fa-times mr-2"></i> Cancel
+                    </button>
+                    <button id="saveDistButton" title="Add Distribution" 
+                        class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 hover:shadow-md">
+                        <i class="fas fa-plus mr-2"></i> Add
+                    </button>
                 </div>
-            </div>
-
-            <div class="flex items-center justify-end space-x-2 pt-3">
-                <button id="saveDistButton" title="Add Distribution" class="icon-button bg-green-600 hover:bg-green-700 focus:ring-green-500 w-full sm:w-auto">
-                    <i class="fas fa-plus mr-1"></i> Add
-                </button>
-                <button id="cancelEditButton" title="Cancel Edit" class="hidden icon-button bg-gray-500 hover:bg-gray-600 focus:ring-gray-400 w-full sm:w-auto">
-                    <i class="fas fa-times mr-1"></i> Cancel
-                </button>
             </div>
         </div>
-    </div>
+        
+        <!-- Toggle button for adding new distribution -->
+        <div class="flex justify-center mb-8">
+            <button id="toggleFormButton" class="group relative flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                <span id="toggleButtonText">Add New Distribution</span>
+                <i id="toggleButtonIcon" class="fas fa-plus-circle text-lg transition-transform duration-300"></i>
+            </button>
+        </div>
 
     <script>
         // --- Configuration ---
@@ -119,9 +130,10 @@
         let chartInstance = null;
         let distributions = []; 
         let currentEditIndex = -1; 
-        const FLOAT_COMPARISON_TOLERANCE = 1e-9; // For comparing float values
+        const FLOAT_COMPARISON_TOLERANCE = 1e-9;
+        let isFormVisible = false;
 
-        // --- Distribution Definitions (with default display ranges and updated labels) ---
+        // --- Distribution Definitions ---
         const distributionDefinitions = {
             uniform: {
                 name: 'Uniform',
@@ -131,6 +143,12 @@
                 ],
                 discrete: false,
                 pdf: (x, p) => (p.b <= p.a ? 0 : (x >= p.a && x <= p.b ? 1 / (p.b - p.a) : 0)),
+                cdf: (x, p) => {
+                    if (p.b <= p.a) return (x < p.a ? 0 : 1); // Or handle as error
+                    if (x < p.a) return 0;
+                    if (x >= p.b) return 1;
+                    return (x - p.a) / (p.b - p.a);
+                },
                 range: (p) => ({ min: p.a, max: p.b }),
                 support: (p) => ({min: p.a, max: p.b})
             },
@@ -142,6 +160,10 @@
                 ],
                 discrete: false,
                 pdf: (x, p) => (p.sigma <= 0 ? 0 : (1 / (p.sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - p.mu) / p.sigma, 2))),
+                cdf: (x, p) => {
+                    if (p.sigma <= 0) return (x < p.mu ? 0 : 1);
+                    return 0.5 * (1 + math.erf((x - p.mu) / (p.sigma * Math.sqrt(2))));
+                },
                 range: (p) => (p.sigma > 0 ? { min: p.mu - 4 * p.sigma, max: p.mu + 4 * p.sigma } : {min: p.mu -1, max: p.mu+1}),
                 support: () => ({min: -Infinity, max: Infinity})
             },
@@ -153,14 +175,23 @@
                 ],
                 discrete: false,
                 pdf: (x, p) => (x <= 0 || p.sigmaLog <= 0 ? 0 : (1 / (x * p.sigmaLog * Math.sqrt(2 * Math.PI))) * Math.exp(-Math.pow(Math.log(x) - p.muLog, 2) / (2 * p.sigmaLog * p.sigmaLog))),
+                cdf: (x, p) => {
+                    if (x <= 0) return 0;
+                    if (p.sigmaLog <= 0) return 1; // if sigma_log is 0, it's a spike at exp(muLog)
+                    return 0.5 * (1 + math.erf((Math.log(x) - p.muLog) / (p.sigmaLog * Math.sqrt(2))));
+                },
                 range: (p) => (p.sigmaLog > 0 ? { min: 0.001, max: Math.exp(p.muLog + 4 * p.sigmaLog) } : {min: 0.001, max:1}),
-                support: () => ({min: 0, max: Infinity}) // x > 0 for PDF
+                support: () => ({min: 0, max: Infinity})
             },
             exponential: {
                 name: 'Exponential',
                 params: [ { id: 'lambda', label: 'Rate (λ):', default: 1, type: 'number', step: 'any', minVal: 0.00001 } ],
                 discrete: false,
                 pdf: (x, p) => (x < 0 || p.lambda <= 0 ? 0 : p.lambda * Math.exp(-p.lambda * x)),
+                cdf: (x, p) => {
+                    if (x < 0 || p.lambda <= 0) return 0;
+                    return 1 - Math.exp(-p.lambda * x);
+                },
                 range: (p) => (p.lambda > 0 ? { min: 0, max: 5 / p.lambda } : {min:0, max:5}),
                 support: () => ({min: 0, max: Infinity})
             },
@@ -169,8 +200,16 @@
                 params: [ { id: 'lambda', label: 'Avg Events (λ):', default: 3, type: 'number', step: '1', minVal: 0 } ],
                 discrete: true,
                 pdf: (k, p) => (k < 0 || p.lambda < 0 || !Number.isInteger(k) ? 0 : (Math.pow(p.lambda, k) * Math.exp(-p.lambda)) / math.factorial(k)),
+                cdf: (k, p) => {
+                    if (k < 0 || p.lambda < 0) return 0;
+                    let sum = 0;
+                    for (let i = 0; i <= Math.floor(k); i++) { // Ensure k is integer for summation
+                        sum += distributionDefinitions.poisson.pdf(i, p); // Call self PMF
+                    }
+                    return sum;
+                },
                 range: (p) => ({ min: Math.max(0, Math.floor(p.lambda - 4 * Math.sqrt(p.lambda))), max: Math.ceil(p.lambda + 4 * Math.sqrt(p.lambda)) +1 }),
-                support: () => ({min: 0, max: Infinity}) // k >= 0 integers
+                support: () => ({min: 0, max: Infinity})
             },
             triangular: {
                 name: 'Triangular',
@@ -180,7 +219,7 @@
                     { id: 'c', label: 'Mode (c):', default: 5, type: 'number', step: 'any' }
                 ],
                 discrete: false,
-                pdf: (x, p) => {
+                pdf: (x, p) => { 
                     const { a, b, c } = p;
                     if (b <= a || c < a || c > b) return 0;
                     if (x < a || x > b) return 0;
@@ -190,6 +229,21 @@
                     if (x <= c) return (c-a === 0 ? (x === c ? Infinity : 0) : (2 * (x - a)) / ((b - a) * (c - a)));
                     if (x > c) return (b-c === 0 ? (x === c ? Infinity : 0) : (2 * (b - x)) / ((b - a) * (b - c)));
                     return 0;
+                },
+                cdf: (x, p) => {
+                    const { a, b, c } = p;
+                    if (b <= a || c < a || c > b) return (x < a ? 0 : 1); // Simplified for invalid params
+                    if (x < a) return 0;
+                    if (x >= b) return 1;
+                    if (a === b) return (x >= a ? 1: 0); // Point mass
+
+                    if (x <= c) {
+                        if (c - a === 0) return (x === a ? 0 : 1); // If mode is min, effectively a right triangle starting at a or spike
+                        return ((x - a) * (x - a)) / ((b - a) * (c - a));
+                    } else { // x > c
+                        if (b - c === 0) return (x === b ? 1 : 0); // If mode is max, effectively a left triangle ending at b or spike
+                        return 1 - ((b - x) * (b - x)) / ((b - a) * (b - c));
+                    }
                 },
                 range: (p) => ({ min: p.a, max: p.b }),
                 support: (p) => ({min: p.a, max: p.b})
@@ -209,13 +263,10 @@
                     if (x === 0 && alpha === 1) return beta; 
                     if (x === 1 && beta === 1) return alpha; 
                     if ((x === 0 && alpha > 1) || (x === 1 && beta > 1)) return 0;
-                    
-                    // Corrected: Use Math.log(math.gamma()) instead of math.logGamma()
                     const logGammaAlpha = Math.log(math.gamma(alpha));
                     const logGammaBeta = Math.log(math.gamma(beta));
                     const logGammaAlphaPlusBeta = Math.log(math.gamma(alpha + beta));
                     const logBetaFunc = logGammaAlpha + logGammaBeta - logGammaAlphaPlusBeta;
-
                     return Math.exp((alpha - 1) * Math.log(x) + (beta - 1) * Math.log(1 - x) - logBetaFunc);
                 },
                 range: (p) => ({ min: 0, max: 1 }),
@@ -247,13 +298,22 @@
                 params: [ { id: 'prob', label: 'Prob of Success (p):', default: 0.5, type: 'number', step: 'any', minVal: 0, maxVal: 1 } ],
                 discrete: true,
                 pdf: (k, p) => {
+                    const rk = Math.round(k); // Handle potential float k from chart
                     if (p.prob < 0 || p.prob > 1) return 0;
-                    if (k === 0) return 1 - p.prob;
-                    if (k === 1) return p.prob;
+                    if (rk === 0) return 1 - p.prob;
+                    if (rk === 1) return p.prob;
                     return 0;
                 },
+                cdf: (k, p) => {
+                    if (k < 0) return 0;
+                    // k is often float from chart labels, round for discrete logic
+                    const rk = Math.round(k);
+                    if (rk < 0) return 0;
+                    if (rk < 1) return 1 - p.prob; // P(X=0)
+                    return 1; // P(X=0) + P(X=1)
+                },
                 range: (p) => ({ min: -0.5, max: 1.5 }),
-                support: () => ({min:0, max:1}) // k can only be 0 or 1
+                support: () => ({min:0, max:1})
             },
             binomial: {
                 name: 'Binomial',
@@ -264,12 +324,25 @@
                 discrete: true,
                 pdf: (k, p) => {
                     const { n, prob } = p;
-                    if (prob < 0 || prob > 1 || n < 0 || !Number.isInteger(n) || k < 0 || k > n || !Number.isInteger(k)) return 0;
-                    if (n === 0 && k === 0) return 1;
-                    return math.combinations(n, k) * Math.pow(prob, k) * Math.pow(1 - prob, n - k);
+                    const rk = Math.round(k); // Handle potential float k
+                    if (prob < 0 || prob > 1 || n < 0 || !Number.isInteger(n) || rk < 0 || rk > n || !Number.isInteger(rk)) return 0;
+                    if (n === 0 && rk === 0) return 1;
+                    return math.combinations(n, rk) * Math.pow(prob, rk) * Math.pow(1 - prob, n - rk);
+                },
+                cdf: (k, p) => {
+                    const { n } = p;
+                    if (k < 0) return 0;
+                    if (k >= n) return 1; // Sum up to n is 1
+                    let sum = 0;
+                    // k is often float from chart labels, round for discrete logic
+                    for (let i = 0; i <= Math.floor(k); i++) {
+                        if (i > n) break; // Should not happen if k < n
+                        sum += distributionDefinitions.binomial.pdf(i, p); // Call self PMF
+                    }
+                    return sum;
                 },
                 range: (p) => ({ min: -0.5, max: p.n + 0.5 }),
-                support: (p) => ({min:0, max:p.n}) // k from 0 to n
+                support: (p) => ({min:0, max:p.n})
             }
         };
 
@@ -287,6 +360,33 @@
         const logScaleXCheckbox = document.getElementById('logScaleX');
         const formTitle = document.getElementById('formTitle');
         const plotPointsInput = document.getElementById('plotPoints');
+        const toggleFormButton = document.getElementById('toggleFormButton');
+        const toggleButtonText = document.getElementById('toggleButtonText');
+        const toggleButtonIcon = document.getElementById('toggleButtonIcon');
+        const addEditFormContainer = document.getElementById('addEditFormContainer');
+
+        // --- Form Toggle Function ---
+        function toggleFormVisibility(forceShow = null) {
+            if (forceShow !== null) {
+                isFormVisible = forceShow;
+            } else {
+                isFormVisible = !isFormVisible;
+            }
+            
+            if (isFormVisible) {
+                // Show form with animation
+                addEditFormContainer.style.maxHeight = '2000px';
+                addEditFormContainer.style.opacity = '1';
+                toggleButtonText.textContent = 'Hide Form';
+                toggleButtonIcon.classList.add('transform', 'rotate-45');
+            } else {
+                // Hide form with animation
+                addEditFormContainer.style.maxHeight = '0';
+                addEditFormContainer.style.opacity = '0';
+                toggleButtonText.textContent = 'Add New Distribution';
+                toggleButtonIcon.classList.remove('transform', 'rotate-45');
+            }
+        }
 
         // --- UI Initialization ---
         function populateDistributionTypes() {
@@ -316,18 +416,19 @@
 
             distDef.params.forEach(param => {
                 const groupDiv = document.createElement('div');
-                groupDiv.className = 'param-input-group';
+                groupDiv.className = 'flex flex-col';
 
                 const label = document.createElement('label');
                 label.htmlFor = `param_${param.id}`;
                 label.textContent = param.label;
+                label.className = 'text-xs font-medium text-gray-600 mb-0.5';
                 groupDiv.appendChild(label);
 
                 const input = document.createElement('input');
                 input.type = param.type || 'number';
                 input.id = `param_${param.id}`;
                 input.name = param.id;
-                input.className = 'form-input text-sm'; 
+                input.className = 'mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200 ease-in-out hover:border-indigo-400'; 
                 input.value = param.default;
                 if (param.step) input.step = param.step;
                 if (param.minVal !== undefined) input.min = param.minVal;
@@ -353,11 +454,15 @@
                     },
                     plugins: {
                         legend: {
-                            position: 'top', // Position legend at the top
-                            align: 'end',    // Align to the right (end)
-                            labels: {
-                                boxWidth: 12,
-                                font: { size: 10 }
+                            position: 'top', 
+                            align: 'end',
+                            labels: { 
+                                boxWidth: 10,
+                                padding: 6,
+                                font: { size: 11 }
+                            },
+                            title: {
+                                display: false
                             }
                         },
                         tooltip: {
@@ -369,103 +474,94 @@
                                     return label;
                                 }
                             }
-                        },
-                        afterDraw: (chart) => { // For drawing clipping icons
-                            const ctx = chart.ctx;
-                            const xAxis = chart.scales.x;
-                            const yAxis = chart.scales.y;
-                            const chartArea = chart.chartArea;
-
-                            if (!chartArea) return;
-
-                            chart.data.datasets.forEach((dataset, datasetIndex) => {
-                                const meta = chart.getDatasetMeta(datasetIndex);
-                                if (!meta.hidden && dataset.data.length > 0) {
-                                    const dist = distributions[datasetIndex];
-                                    if (!dist) return;
-                                    const distDef = distributionDefinitions[dist.type];
-
-                                    const drawClipIconAtPoint = (xVal, yVal, color) => {
-                                        const xPixel = xAxis.getPixelForValue(xVal);
-                                        const yPixel = yAxis.getPixelForValue(yVal);
-
-                                        if (xPixel >= chartArea.left - FLOAT_COMPARISON_TOLERANCE && xPixel <= chartArea.right + FLOAT_COMPARISON_TOLERANCE &&
-                                            yPixel >= chartArea.top - FLOAT_COMPARISON_TOLERANCE && yPixel <= chartArea.bottom + FLOAT_COMPARISON_TOLERANCE) {
-                                            ctx.save();
-                                            ctx.fillStyle = color;
-                                            ctx.beginPath();
-                                            ctx.arc(xPixel, yPixel, 3.5, 0, 2 * Math.PI); // Small circle
-                                            ctx.fill();
-                                            ctx.restore();
-                                        }
-                                    };
-                                    
-                                    // Check for clipping at the start
-                                    if (dist.clipMin !== null) {
-                                        // Find the first plotted point of this dataset
-                                        const firstPoint = dataset.data.find(p => p !== null && p.y !== null); // Assumes {x,y} objects or array of y
-                                        let firstPlottedXVal;
-                                        let firstPlottedYVal;
-
-                                        if (typeof dataset.data[0] === 'object' && dataset.data[0] !== null) { // {x,y} format
-                                            const firstValidIndex = dataset.data.findIndex(p => p !== null && p.y !== null);
-                                            if (firstValidIndex !== -1) {
-                                                firstPlottedXVal = dataset.data[firstValidIndex].x;
-                                                firstPlottedYVal = dataset.data[firstValidIndex].y;
-                                            }
-                                        } else { // Array of y, x from labels
-                                            const firstValidIndex = dataset.data.findIndex(y => y !== null);
-                                            if (firstValidIndex !== -1) {
-                                                firstPlottedXVal = chart.data.labels[firstValidIndex];
-                                                firstPlottedYVal = dataset.data[firstValidIndex];
-                                            }
-                                        }
-                                        
-                                        if (firstPlottedXVal !== undefined && Math.abs(firstPlottedXVal - dist.clipMin) < FLOAT_COMPARISON_TOLERANCE) {
-                                            // Check if this clipping is "sharper" than natural support
-                                            const naturalSupport = distDef.support(dist.params);
-                                            if (dist.clipMin > naturalSupport.min + FLOAT_COMPARISON_TOLERANCE) {
-                                                 drawClipIconAtPoint(firstPlottedXVal, firstPlottedYVal, dataset.borderColor);
-                                            }
-                                        }
-                                    }
-
-                                    // Check for clipping at the end
-                                    if (dist.clipMax !== null) {
-                                        let lastPlottedXVal;
-                                        let lastPlottedYVal;
-
-                                        if (typeof dataset.data[0] === 'object' && dataset.data[0] !== null) { // {x,y} format
-                                            for (let i = dataset.data.length - 1; i >= 0; i--) {
-                                                if (dataset.data[i] !== null && dataset.data[i].y !== null) {
-                                                    lastPlottedXVal = dataset.data[i].x;
-                                                    lastPlottedYVal = dataset.data[i].y;
-                                                    break;
-                                                }
-                                            }
-                                        } else { // Array of y, x from labels
-                                             for (let i = dataset.data.length - 1; i >= 0; i--) {
-                                                if (dataset.data[i] !== null) {
-                                                    lastPlottedXVal = chart.data.labels[i];
-                                                    lastPlottedYVal = dataset.data[i];
-                                                    break;
-                                                }
-                                            }
-                                        }
-
-                                        if (lastPlottedXVal !== undefined && Math.abs(lastPlottedXVal - dist.clipMax) < FLOAT_COMPARISON_TOLERANCE) {
-                                            const naturalSupport = distDef.support(dist.params);
-                                            if (dist.clipMax < naturalSupport.max - FLOAT_COMPARISON_TOLERANCE) {
-                                                 drawClipIconAtPoint(lastPlottedXVal, lastPlottedYVal, dataset.borderColor);
-                                            }
-                                        }
-                                    }
-                                }
-                            });
                         }
                     }
                 }
             });
+
+            chartInstance.options.plugins.afterDraw = (chart) => {
+                const chartArea = chart.chartArea;
+                if (!chartArea) return;
+
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    if (!meta.hidden && dataset.data.length > 0) {
+                        const dist = distributions[datasetIndex];
+                        if (!dist) return;
+                        const distDef = distributionDefinitions[dist.type];
+
+                        const drawClipIconAtPoint = (xVal, yVal, color) => {
+                            const xAxis = chart.scales.x;
+                            const yAxis = chart.scales.y;
+                            const xPixel = xAxis.getPixelForValue(xVal);
+                            const yPixel = yAxis.getPixelForValue(yVal);
+
+                            if (xPixel >= chartArea.left - FLOAT_COMPARISON_TOLERANCE && 
+                                xPixel <= chartArea.right + FLOAT_COMPARISON_TOLERANCE &&
+                                yPixel >= chartArea.top - FLOAT_COMPARISON_TOLERANCE && 
+                                yPixel <= chartArea.bottom + FLOAT_COMPARISON_TOLERANCE) {
+                                const ctx = chart.ctx;
+                                ctx.save();
+                                ctx.fillStyle = color;
+                                ctx.beginPath();
+                                ctx.arc(xPixel, yPixel, 3.5, 0, 2 * Math.PI); 
+                                ctx.fill();
+                                ctx.restore();
+                            }
+                        };
+
+                        if (dist.clipMin !== null) {
+                            let firstPlottedXVal, firstPlottedYVal;
+                            const firstValidIndex = dataset.data.findIndex(val => val !== null && 
+                                (typeof val === 'number' || (typeof val === 'object' && val.y !== null)));
+                            
+                            if(firstValidIndex !== -1){
+                                if (typeof dataset.data[firstValidIndex] === 'object') {
+                                    firstPlottedXVal = dataset.data[firstValidIndex].x;
+                                    firstPlottedYVal = dataset.data[firstValidIndex].y;
+                                } else {
+                                    firstPlottedXVal = chart.data.labels[firstValidIndex];
+                                    firstPlottedYVal = dataset.data[firstValidIndex];
+                                }
+
+                                if (firstPlottedXVal !== undefined && 
+                                    Math.abs(firstPlottedXVal - dist.clipMin) < FLOAT_COMPARISON_TOLERANCE) {
+                                    const naturalSupport = distDef.support(dist.params);
+                                    if (dist.clipMin > naturalSupport.min + FLOAT_COMPARISON_TOLERANCE) {
+                                        drawClipIconAtPoint(firstPlottedXVal, firstPlottedYVal, dataset.borderColor);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (dist.clipMax !== null) {
+                            let lastPlottedXVal, lastPlottedYVal;
+                            for (let i = dataset.data.length - 1; i >= 0; i--) {
+                                const point = dataset.data[i];
+                                if (point !== null && (typeof point === 'number' || 
+                                    (typeof point === 'object' && point.y !== null))) {
+                                    if (typeof point === 'object') {
+                                        lastPlottedXVal = point.x;
+                                        lastPlottedYVal = point.y;
+                                    } else {
+                                        lastPlottedXVal = chart.data.labels[i];
+                                        lastPlottedYVal = point;
+                                    }
+                                    break;
+                                }
+                            }
+
+                            if (lastPlottedXVal !== undefined && 
+                                Math.abs(lastPlottedXVal - dist.clipMax) < FLOAT_COMPARISON_TOLERANCE) {
+                                const naturalSupport = distDef.support(dist.params);
+                                if (dist.clipMax < naturalSupport.max - FLOAT_COMPARISON_TOLERANCE) {
+                                    drawClipIconAtPoint(lastPlottedXVal, lastPlottedYVal, dataset.borderColor);
+                                }
+                            }
+                        }
+                    }
+                });
+            };
         }
         
         function calculateChartXRange() {
@@ -476,17 +572,16 @@
 
             distributions.forEach(dist => {
                 const distDef = distributionDefinitions[dist.type];
-                let dRange = distDef.range(dist.params); // Get default range from definition
+                let dRange = distDef.range(dist.params); 
 
-                // Override with clipping if defined and tighter
                 if (dist.clipMin !== null && isFinite(dist.clipMin)) {
                     dRange.min = Math.max(dRange.min ?? -Infinity, dist.clipMin);
-                     xMin = Math.min(xMin, dist.clipMin); // Ensure clip points are considered for overall range
+                     xMin = Math.min(xMin, dist.clipMin); 
                      rangeDefined = true;
                 }
                 if (dist.clipMax !== null && isFinite(dist.clipMax)) {
                     dRange.max = Math.min(dRange.max ?? Infinity, dist.clipMax);
-                    xMax = Math.max(xMax, dist.clipMax); // Ensure clip points are considered
+                    xMax = Math.max(xMax, dist.clipMax); 
                     rangeDefined = true;
                 }
                 
@@ -503,7 +598,7 @@
             if (!rangeDefined) return { min: -10, max: 20 };
             if (xMin === xMax) { xMin -= 1; xMax += 1; }
 
-            const padding = (xMax - xMin) * 0.05 || 1; // Ensure padding is non-zero
+            const padding = (xMax - xMin) * 0.05 || 1; 
             return { min: xMin - padding, max: xMax + padding };
         }
 
@@ -524,10 +619,16 @@
             chartInstance.options.scales.x.type = isLog ? 'logarithmic' : 'linear';
             chartInstance.options.scales.x.min = chartRangeMin;
             chartInstance.options.scales.x.max = chartRangeMax;
+            // Update Y-axis title
+            chartInstance.options.scales.y.title.text = 'Density / Probability (tails accumulated at clips)';
 
-            // Generate X values for plotting, ensuring clip points are included
+
             let allPlotXValues = new Set();
-            if (numPoints > 1) {
+            distributions.forEach(d => { 
+                if (d.clipMin !== null && d.clipMin >= chartRangeMin && d.clipMin <= chartRangeMax) allPlotXValues.add(d.clipMin);
+                if (d.clipMax !== null && d.clipMax >= chartRangeMin && d.clipMax <= chartRangeMax) allPlotXValues.add(d.clipMax);
+            });
+             if (numPoints > 1) {
                 if (isLog) {
                     if (chartRangeMin > 0 && chartRangeMax > chartRangeMin) {
                          for (let i = 0; i < numPoints; i++) {
@@ -545,59 +646,58 @@
             } else if (numPoints === 1) {
                  allPlotXValues.add(chartRangeMin + (chartRangeMax-chartRangeMin)/2);
             }
-
-            distributions.forEach(d => { // Add specific clip points of active distributions
-                if (d.clipMin !== null && d.clipMin >= chartRangeMin && d.clipMin <= chartRangeMax) allPlotXValues.add(d.clipMin);
-                if (d.clipMax !== null && d.clipMax >= chartRangeMin && d.clipMax <= chartRangeMax) allPlotXValues.add(d.clipMax);
-            });
             
             const sortedUniqueX = Array.from(allPlotXValues).sort((a,b) => a-b);
             chartInstance.data.labels = sortedUniqueX.map(x => parseFloat(x.toPrecision(4)));
 
-
-            chartInstance.data.datasets = distributions.map(dist => {
+            chartInstance.data.datasets = distributions.map((dist, index) => {
                 const distDef = distributionDefinitions[dist.type];
                 
-                // Use the chart's common X labels for evaluating Y values
-                const yValues = chartInstance.data.labels.map(x => {
-                    let val;
-                    // Apply clipping: if x is outside this distribution's specific clip range, value is null.
-                    // Use tolerance for floating point comparisons.
-                    if ((dist.clipMin !== null && x < dist.clipMin - FLOAT_COMPARISON_TOLERANCE) || 
+                const yValues = chartInstance.data.labels.map(x_label => {
+                    let x = parseFloat(x_label); 
+                    let val = distDef.pdf(x, dist.params); // Base PDF/PMF
+
+                    // Accumulate tails if CDF is available and clipping is active at this point
+                    if (distDef.cdf) {
+                        if (dist.clipMin !== null && Math.abs(x - dist.clipMin) < FLOAT_COMPARISON_TOLERANCE) {
+                            let leftTailMass = 0;
+                            if (distDef.discrete) {
+                                // P(X < clipMin) = CDF(clipMin - 1)
+                                // Ensure clipMin-1 is handled correctly by discrete CDFs (e.g., if clipMin is 0)
+                                const arg = dist.clipMin - (distDef.name === "Bernoulli" || distDef.name === "Poisson" || distDef.name === "Binomial" ? 1 : FLOAT_COMPARISON_TOLERANCE); // Small offset for continuous-like check
+                                leftTailMass = distDef.cdf(arg, dist.params);
+
+                            } else { // Continuous
+                                leftTailMass = distDef.cdf(dist.clipMin, dist.params); // P(X <= clipMin)
+                            }
+                            if (isFinite(leftTailMass) && leftTailMass > 0) { // only add if there's mass
+                                val = (isFinite(val) ? val : 0) + leftTailMass;
+                            }
+                        }
+                        if (dist.clipMax !== null && Math.abs(x - dist.clipMax) < FLOAT_COMPARISON_TOLERANCE) {
+                            let rightTailMass = 0;
+                            // P(X > clipMax) = 1 - CDF(clipMax)
+                            rightTailMass = 1 - distDef.cdf(dist.clipMax, dist.params);
+                            if (isFinite(rightTailMass) && rightTailMass > 0) { // only add if there's mass
+                                val = (isFinite(val) ? val : 0) + rightTailMass;
+                            }
+                        }
+                    }
+
+                    // Final clipping: points outside the clip range are null
+                    if ((dist.clipMin !== null && x < dist.clipMin - FLOAT_COMPARISON_TOLERANCE) ||
                         (dist.clipMax !== null && x > dist.clipMax + FLOAT_COMPARISON_TOLERANCE)) {
-                        val = null;
-                    } else {
-                        val = distDef.pdf(x, dist.params);
+                        return null;
                     }
                     return isFinite(val) ? val : null; 
                 });
 
-                let datasetLabelText = dist.customName || distDef.name;
-                const paramSummary = Object.entries(dist.params).map(([paramId, paramValue]) => {
-                    const paramDef = distDef.params.find(p => p.id === paramId);
-                    const labelPrefix = paramDef ? paramDef.label.split(':')[0] : paramId; // Get text before colon
-                    return `${labelPrefix}=${parseFloat(paramValue).toPrecision(2)}`;
-                }).join(', ');
-                if (paramSummary) datasetLabelText += ` (${paramSummary})`;
-
-
+                // Simplified label text for the legend
+                let datasetLabelText = dist.customName || `${distDef.name} ${index + 1}`;
                 if (distDef.discrete) {
-                    // For discrete, we still map over all chart X labels, but only return Y for integer-like X.
-                    // The `stepped` property will make it look more like a PMF.
-                    const discreteYValues = chartInstance.data.labels.map(x_val => {
-                        let k = Math.round(x_val);
-                        let val = null;
-                        if (Math.abs(x_val - k) < FLOAT_COMPARISON_TOLERANCE) { // If x_val is effectively an integer
-                             if (!((dist.clipMin !== null && k < dist.clipMin - FLOAT_COMPARISON_TOLERANCE) ||
-                                  (dist.clipMax !== null && k > dist.clipMax + FLOAT_COMPARISON_TOLERANCE))) {
-                                val = distDef.pdf(k, dist.params);
-                             }
-                        }
-                        return isFinite(val) ? val : null;
-                    });
-                     return {
+                    return {
                         label: datasetLabelText,
-                        data: discreteYValues, // Use yValues which are already clipped
+                        data: yValues,
                         borderColor: dist.color,
                         backgroundColor: dist.fill ? `${dist.color}4D` : 'transparent',
                         fill: dist.fill ? 'origin' : false,
@@ -610,7 +710,7 @@
                 }
                 return {
                     label: datasetLabelText,
-                    data: yValues, // yValues are now correctly nulled outside clip range
+                    data: yValues,
                     borderColor: dist.color,
                     backgroundColor: dist.fill ? `${dist.color}4D` : 'transparent',
                     fill: dist.fill ? 'origin' : false,
@@ -628,7 +728,7 @@
             distributions.forEach((dist, index) => {
                 const distDef = distributionDefinitions[dist.type];
                 const itemDiv = document.createElement('div');
-                itemDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg shadow hover:shadow-md transition-shadow duration-150';
+                itemDiv.className = 'flex items-center justify-between p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-150 border border-gray-100';
 
                 const infoDiv = document.createElement('div');
                 infoDiv.className = 'flex-grow mr-2 overflow-hidden'; 
@@ -645,7 +745,10 @@
                     <div class="text-xs mt-1 sm:mt-0">
                         <span class="mr-2">Color: <span class="inline-block w-3 h-3 rounded-sm align-middle" style="background-color: ${dist.color};"></span></span>
                         <span class="mr-2">Fill: ${dist.fill ? 'Yes' : 'No'}</span>
-                        ${dist.clipMin !== null || dist.clipMax !== null ? `<span>Clip: [${dist.clipMin ?? 'N/A'}-${dist.clipMax ?? 'N/A'}]</span>` : ''}
+                        ${dist.clipMin !== null || dist.clipMax !== null ? 
+                          `<span>Clip: [${dist.clipMin ?? 'N/A'}-${dist.clipMax ?? 'N/A'}]</span>` : ''}
+                        ${!distDef.cdf ? 
+                          '<span class="text-orange-500 ml-2 text-xs italic">(Tail accumulation N/A)</span>' : ''}
                     </div>
                 `;
 
@@ -653,14 +756,17 @@
                 actionsDiv.className = 'flex-shrink-0 flex items-center';
                 const editButton = document.createElement('button');
                 editButton.title = 'Edit Distribution';
-                editButton.className = 'text-blue-500 hover:text-blue-700 mr-2 px-2 py-1 rounded hover:bg-blue-100 transition-colors';
+                editButton.className = 'text-blue-500 hover:text-blue-700 mr-2 px-2 py-1 rounded hover:bg-blue-50 transition-colors';
                 editButton.innerHTML = '<i class="fas fa-pencil-alt"></i>';
-                editButton.onclick = () => loadDistributionForEdit(index);
+                editButton.onclick = () => {
+                    toggleFormVisibility(true); // Force show form when editing
+                    loadDistributionForEdit(index);
+                };
                 actionsDiv.appendChild(editButton);
 
                 const deleteButton = document.createElement('button');
                 deleteButton.title = 'Delete Distribution';
-                deleteButton.className = 'text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-100 transition-colors';
+                deleteButton.className = 'text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50 transition-colors';
                 deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
                 deleteButton.onclick = () => deleteDistribution(index);
                 actionsDiv.appendChild(deleteButton);
@@ -670,7 +776,11 @@
                 distributionsListDiv.appendChild(itemDiv);
             });
             if (distributions.length === 0) {
-                distributionsListDiv.innerHTML = `<p class="text-center text-gray-500 italic py-4">No distributions added yet. Add one below to get started!</p>`;
+                distributionsListDiv.innerHTML = `
+                    <div class="text-center text-gray-500 italic py-6 bg-white rounded-lg shadow">
+                        <i class="fas fa-chart-area text-gray-300 text-4xl mb-2"></i>
+                        <p>No distributions added yet. Add one below to get started!</p>
+                    </div>`;
             }
         }
 
@@ -683,12 +793,17 @@
             distColorSelect.value = Object.values(COLOR_MAP)[0];
             fillLineCheckbox.checked = false;
             currentEditIndex = -1;
-            saveDistButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Add';
+            saveDistButton.innerHTML = '<i class="fas fa-plus mr-2"></i> Add';
             saveDistButton.title = 'Add Distribution';
             saveDistButton.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
             saveDistButton.classList.add('bg-green-600', 'hover:bg-green-700', 'focus:ring-green-500');
             cancelEditButton.classList.add('hidden');
             formTitle.textContent = 'Add New Distribution';
+            
+            // Hide form after reset if not editing
+            if (currentEditIndex === -1) {
+                toggleFormVisibility(false);
+            }
         }
 
         function loadDistributionForEdit(index) {
@@ -709,7 +824,7 @@
             distColorSelect.value = dist.color;
             fillLineCheckbox.checked = dist.fill;
 
-            saveDistButton.innerHTML = '<i class="fas fa-save mr-1"></i> Save';
+            saveDistButton.innerHTML = '<i class="fas fa-save mr-2"></i> Save';
             saveDistButton.title = 'Save Changes';
             saveDistButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'focus:ring-green-500');
             saveDistButton.classList.add('bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
@@ -729,25 +844,18 @@
                 let valueStr = inputElement.value.trim();
                 let value;
 
-                if (valueStr === '') { // Handle empty inputs
-                    // If a default exists, or if it's allowed to be empty (e.g. not having minVal constraint)
-                    // For now, let's treat empty as potentially invalid if a number is expected by minVal/maxVal
-                    // or if it's a core parameter. This might need refinement based on which params are truly optional.
-                    // For simplicity, if empty, and default exists, consider default? Or require input.
-                    // Let's assume for now that parameters are generally required.
+                if (valueStr === '') { 
                      alert(`Parameter ${param.label} cannot be empty.`);
                      inputElement.focus(); valid = false; return;
                 }
 
-
                 if (param.type === 'number' || !param.type) {
                     value = parseFloat(valueStr);
-                    if (inputElement.step === '1') value = parseInt(valueStr); // For integer steps
+                    if (inputElement.step === '1') value = parseInt(valueStr); 
                 } else {
                     value = valueStr;
                 }
                 
-
                 if ((param.type === 'number' || !param.type) && isNaN(value)) {
                     alert(`Invalid number for ${param.label}.`);
                     inputElement.focus(); valid = false; return;
@@ -771,7 +879,9 @@
             }
             if (type === 'triangular') {
                 if (params.b <= params.a) { alert('Triangular: Max (b) must be > Min (a).'); valid = false; }
-                else if (params.c < params.a || params.c > params.b) { alert('Triangular: Mode (c) must be between Min (a) and Max (b).'); valid = false; }
+                else if (params.c < params.a || params.c > params.b) { 
+                    alert('Triangular: Mode (c) must be between Min (a) and Max (b).'); valid = false; 
+                }
             }
             if (!valid) return;
 
@@ -784,13 +894,12 @@
                 clipMin: clipMinInput.value !== '' ? parseFloat(clipMinInput.value) : null,
                 clipMax: clipMaxInput.value !== '' ? parseFloat(clipMaxInput.value) : null,
             };
-             // Validate clipMin < clipMax if both are provided
-            if (newDistribution.clipMin !== null && newDistribution.clipMax !== null && newDistribution.clipMin >= newDistribution.clipMax) {
+            if (newDistribution.clipMin !== null && newDistribution.clipMax !== null && 
+                newDistribution.clipMin >= newDistribution.clipMax) {
                 alert('Clip Min must be less than Clip Max.');
                 clipMinInput.focus();
                 return;
             }
-
 
             if (currentEditIndex === -1) { 
                 distributions.push(newDistribution);
@@ -819,6 +928,7 @@
         cancelEditButton.addEventListener('click', resetForm);
         logScaleXCheckbox.addEventListener('change', updateChart);
         plotPointsInput.addEventListener('change', updateChart);
+        toggleFormButton.addEventListener('click', toggleFormVisibility);
         
         // --- Initial Setup ---
         window.onload = () => {
@@ -828,6 +938,8 @@
             initializeChart();
             renderDistributionsList(); 
             updateChart(); 
+            // Start with the form hidden
+            toggleFormVisibility(false);
         };
     </script>
 </body>
