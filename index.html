@@ -125,7 +125,7 @@
             'Crimson': '#FF6384', 'Sky Blue': '#36A2EB', 'Gold': '#FFCE56',
             'Teal': '#4BC0C0', 'Lavender': '#9966FF', 'Orange': '#FF9F40',
             'Emerald': '#2ECC71', 'Ruby': '#E74C3C', 'Sunflower': '#F1C40F',
-            'Amethyst': '#8E44AD'
+            'Amethyst': '#8E44AD', 'Dark Grey': '#444444' // Added Dark Grey color
         };
         let chartInstance = null;
         let distributions = []; 
@@ -367,6 +367,7 @@
 
         // --- Form Toggle Function ---
         function toggleFormVisibility(forceShow = null) {
+            // Fix for toggle form button
             if (forceShow !== null) {
                 isFormVisible = forceShow;
             } else {
@@ -375,7 +376,7 @@
             
             if (isFormVisible) {
                 // Show form with animation
-                addEditFormContainer.style.maxHeight = '2000px';
+                addEditFormContainer.style.maxHeight = '2000px'; // Use a large value to ensure all content fits
                 addEditFormContainer.style.opacity = '1';
                 toggleButtonText.textContent = 'Hide Form';
                 toggleButtonIcon.classList.add('transform', 'rotate-45');
@@ -386,6 +387,62 @@
                 toggleButtonText.textContent = 'Add New Distribution';
                 toggleButtonIcon.classList.remove('transform', 'rotate-45');
             }
+        }
+
+        // --- Function to handle both decimal separators ---
+        function setupDecimalSeparatorSupport() {
+            // Get all number input fields including dynamically created ones
+            const handleInputField = (input) => {
+                if (input.type === 'number') {
+                    // Handle input event for decimal separator conversion
+                    input.addEventListener('input', function(e) {
+                        let value = e.target.value;
+                        
+                        // If the value contains a dot, keep it as is (browser handles it natively)
+                        // If the value contains a comma, replace it with a dot for calculation
+                        if (value.includes(',')) {
+                            // Save cursor position
+                            const cursorPos = e.target.selectionStart;
+                            // Replace comma with dot
+                            const newValue = value.replace(/,/g, '.');
+                            // Set the new value
+                            e.target.value = newValue;
+                            // Restore cursor position
+                            e.target.setSelectionRange(cursorPos, cursorPos);
+                        }
+                    });
+                }
+            };
+
+            // Apply to all existing number inputs
+            document.querySelectorAll('input[type="number"]').forEach(handleInputField);
+
+            // Use MutationObserver to detect new input fields added to the DOM
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.addedNodes) {
+                        mutation.addedNodes.forEach(function(node) {
+                            // Check if the added node is an element
+                            if (node.nodeType === 1) {
+                                // If it's an input, check it
+                                if (node.tagName === 'INPUT') {
+                                    handleInputField(node);
+                                }
+                                // If it contains inputs, check all of them
+                                if (node.querySelectorAll) {
+                                    node.querySelectorAll('input[type="number"]').forEach(handleInputField);
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Start observing the entire document for all changes
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
         }
 
         // --- UI Initialization ---
@@ -739,11 +796,11 @@
                     return `${labelPrefix}=${parseFloat(v).toPrecision(3)}`;
                 }).join(', ');
 
+                // Modified distribution list display to color the distribution name
                 infoDiv.innerHTML = `
-                    <span class="font-semibold text-indigo-600 truncate" title="${nameToShow}">${nameToShow}</span>
+                    <span class="font-semibold truncate" title="${nameToShow}" style="color: ${dist.color};">${nameToShow}</span>
                     <span class="text-xs text-gray-600 block sm:inline sm:ml-1">(${distDef.name}: ${paramString})</span>
                     <div class="text-xs mt-1 sm:mt-0">
-                        <span class="mr-2">Color: <span class="inline-block w-3 h-3 rounded-sm align-middle" style="background-color: ${dist.color};"></span></span>
                         <span class="mr-2">Fill: ${dist.fill ? 'Yes' : 'No'}</span>
                         ${dist.clipMin !== null || dist.clipMax !== null ? 
                           `<span>Clip: [${dist.clipMin ?? 'N/A'}-${dist.clipMax ?? 'N/A'}]</span>` : ''}
@@ -799,11 +856,6 @@
             saveDistButton.classList.add('bg-green-600', 'hover:bg-green-700', 'focus:ring-green-500');
             cancelEditButton.classList.add('hidden');
             formTitle.textContent = 'Add New Distribution';
-            
-            // Hide form after reset if not editing
-            if (currentEditIndex === -1) {
-                toggleFormVisibility(false);
-            }
         }
 
         function loadDistributionForEdit(index) {
@@ -842,6 +894,10 @@
             distDef.params.forEach(param => {
                 const inputElement = document.getElementById(`param_${param.id}`);
                 let valueStr = inputElement.value.trim();
+                
+                // Handle decimal separator conversion
+                valueStr = valueStr.replace(/,/g, '.');
+                
                 let value;
 
                 if (valueStr === '') { 
@@ -884,6 +940,10 @@
                 }
             }
             if (!valid) return;
+            
+            // Handle decimal separator conversion for clipping values
+            let clipMin = clipMinInput.value !== '' ? parseFloat(clipMinInput.value.replace(/,/g, '.')) : null;
+            let clipMax = clipMaxInput.value !== '' ? parseFloat(clipMaxInput.value.replace(/,/g, '.')) : null;
 
             const newDistribution = {
                 customName: distNameInput.value.trim() || '',
@@ -891,9 +951,10 @@
                 params: params,
                 color: distColorSelect.value,
                 fill: fillLineCheckbox.checked,
-                clipMin: clipMinInput.value !== '' ? parseFloat(clipMinInput.value) : null,
-                clipMax: clipMaxInput.value !== '' ? parseFloat(clipMaxInput.value) : null,
+                clipMin: clipMin,
+                clipMax: clipMax,
             };
+            
             if (newDistribution.clipMin !== null && newDistribution.clipMax !== null && 
                 newDistribution.clipMin >= newDistribution.clipMax) {
                 alert('Clip Min must be less than Clip Max.');
@@ -938,6 +999,7 @@
             initializeChart();
             renderDistributionsList(); 
             updateChart(); 
+            setupDecimalSeparatorSupport(); // Initialize decimal separator support
             // Start with the form hidden
             toggleFormVisibility(false);
         };
